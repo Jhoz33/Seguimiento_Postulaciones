@@ -1,34 +1,170 @@
 ---
-import { getApplications } from '../lib/storage';
-
-const applications = await getApplications();
----
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>Seguimiento de Postulaciones</title>
+  <link rel="stylesheet" href="/styles/global.css">
 </head>
 <body>
-  <h1>Seguimiento de Postulaciones</h1>
-  <ul>
-    {applications.map(app => (
-      <li>
-        <strong>{app.nombre}</strong> - {app.enlace}
-        <br/>
-        <small>Fecha: {app.createdAt}</small>
-        <br/>
-        Resultados:
-        <ul>
-          <li>Postulación: {app.resultadosPostulacion}</li>
-          <li>Evaluación: {app.resultadosEvaluacion}</li>
-          <li>CV: {app.resultadosCV}</li>
-          <li>Entrevista: {app.resultadosEntrevista}</li>
-          <li>Final: {app.resultadosFinales}</li>
-        </ul>
-        <button onClick={() => {/* eliminar */}}>Eliminar</button>
-      </li>
-    ))}
-  </ul>
+  <main class="container">
+    <h1 class="title">Seguimiento de Postulaciones</h1>
+
+    <section class="form-section">
+      <h2 class="section-title">Agregar nueva postulación</h2>
+      <form id="app-form">
+        <input type="url" name="enlace" placeholder="Enlace" required />
+        <input type="text" name="nombre" placeholder="Nombre" required />
+        <input type="text" name="resultadosPostulacion" placeholder="Resultados Postulación" />
+        <input type="text" name="resultadosEvaluacion" placeholder="Resultados Evaluación" />
+        <input type="text" name="resultadosCV" placeholder="Resultados CV" />
+        <input type="text" name="resultadosEntrevista" placeholder="Resultados Entrevista" />
+        <input type="text" name="resultadosFinales" placeholder="Resultados Finales" />
+        <button type="submit">Guardar</button>
+      </form>
+    </section>
+
+    <section class="list-section">
+      <h2 class="section-title">Postulaciones</h2>
+      <ul class="app-list">
+        <!-- Applications will be injected by JavaScript -->
+      </ul>
+    </section>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="edit-modal" style="display:none;">
+      <dialog class="edit-dialog">
+        <h3>Editar postulación</h3>
+        <form id="edit-form">
+          <input type="url" name="enlace" placeholder="Enlace" required />
+          <input type="text" name="nombre" placeholder="Nombre" required />
+          <input type="text" name="resultadosPostulacion" placeholder="Resultados Postulación" />
+          <input type="text" name="resultadosEvaluacion" placeholder="Resultados Evaluación" />
+          <input type="text" name="resultadosCV" placeholder="Resultados CV" />
+          <input type="text" name="resultadosEntrevista" placeholder="Resultados Entrevista" />
+          <input type="text" name="resultadosFinales" placeholder="Resultados Finales" />
+          <button type="submit">Actualizar</button>
+          <button type="button" class="close-btn">Cancelar</button>
+        </form>
+      </dialog>
+    </div>
+  </main>
+
+  <script>
+    // Load applications
+    let apps = [];
+    async function loadApps() {
+      const res = await fetch('/api/applications');
+      const data = await res.json();
+      apps = data;
+      renderList();
+    }
+    loadApps();
+
+    function renderList() {
+      const list = document.querySelector('.app-list');
+      list.innerHTML = '';
+      apps.forEach(app => {
+        const li = document.createElement('li');
+        li.className = 'app-card';
+        li.innerHTML = \`
+          <div class="info">
+            <strong>\${app.nombre}</strong> - <a href="\${app.enlace}">\${app.enlace}</a>
+            <small>Fecha: \${app.createdAt}</small>
+          </div>
+          <div class="results">
+            <p>Postulación: \${app.resultadosPostulacion}</p>
+            <p>Evaluación: \${app.resultadosEvaluacion}</p>
+            <p>CV: \${app.resultadosCV}</p>
+            <p>Entrevista: \${app.resultadosEntrevista}</p>
+            <p>Final: \${app.resultadosFinales}</p>
+          </div>
+          <div class="actions">
+            <button class="edit-btn" data-id="\${app.id}">Editar</button>
+            <button class="delete-btn" data-id="\${app.id}">Eliminar</button>
+          </div>
+        \`;
+        list.appendChild(li);
+      });
+      attachEvents();
+    }
+
+    function attachEvents() {
+      // Delete
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = btn.dataset.id;
+          await fetch('/api/applications', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          renderList();
+        });
+      });
+
+      // Edit
+      document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = btn.dataset.id;
+          const app = apps.find(a => a.id === id);
+          document.querySelectorAll('#edit-form input').forEach(f => {
+            f.value = app[f.name] || '';
+          });
+          document.getElementById('edit-modal').style.display = 'block';
+          editModeId = id;
+        });
+      });
+    }
+
+    // Add new application
+    document.getElementById('app-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const payload = {
+        enlace: form.enlace.value,
+        nombre: form.nombre.value,
+        resultadosPostulacion: form.resultadosPostulacion.value,
+        resultadosEvaluacion: form.resultadosEvaluacion.value,
+        resultadosCV: form.resultadosCV.value,
+        resultadosEntrevista: form.resultadosEntrevista.value,
+        resultadosFinales: form.resultadosFinales.value,
+      };
+      const res = await fetch('/api/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const newApp = await res.json();
+      apps.unshift(newApp);
+      form.reset();
+      renderList();
+    });
+
+    // Edit submit
+    let editModeId = null;
+    document.getElementById('edit-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const payload = {
+        enlace: form.enlace.value,
+        nombre: form.nombre.value,
+        resultadosPostulacion: form.resultadosPostulacion.value,
+        resultadosEvaluacion: form.resultadosEvaluacion.value,
+        resultadosCV: form.resultadosCV.value,
+        resultadosEntrevista: form.resultadosEntrevista.value,
+        resultadosFinales: form.resultadosFinales.value,
+      };
+      await fetch('/api/applications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editModeId, ...payload })
+      });
+      document.getElementById('edit-modal').style.display = 'none';
+      form.reset();
+      renderList();
+      editModeId = null;
+    });
+  </script>
 </body>
 </html>
