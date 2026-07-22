@@ -1,4 +1,4 @@
-import { getApplications, saveApplications } from '../lib/storage';
+import { getApplications, saveApplications } from '../../lib/storage';
 import { randomUUID } from 'crypto';
 
 export async function GET() {
