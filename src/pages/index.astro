@@ -1,5 +1,4 @@
 ---
-<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -90,7 +89,6 @@
     }
 
     function attachEvents() {
-      // Delete
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           const id = btn.dataset.id;
@@ -103,7 +101,6 @@
         });
       });
 
-      // Edit
       document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           const id = btn.dataset.id;
@@ -117,7 +114,6 @@
       });
     }
 
-    // Add new application
     document.getElementById('app-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = e.target;
@@ -141,7 +137,6 @@
       renderList();
     });
 
-    // Edit submit
     let editModeId = null;
     document.getElementById('edit-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
