@@ -2,8 +2,8 @@
 
 // ── Supabase Config ────────────────────────────────────────────
 // ▼▼▼ Coloca aquí tus credenciales de Supabase ▼▼▼
-const SUPABASE_URL = '';
-const SUPABASE_KEY = '';
+const SUPABASE_URL = 'https://ubqdmdvhooakvzuvvmxy.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_U780vzKhsU7jcdBNhw5vmA_wPobRdWh';
 // ▲▲▲ Coloca aquí tus credenciales de Supabase ▲▲▲
 
 let supabase = null;
