@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de Postulaciones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .card-shadow { box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); }
+        .hover-lift { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #fafafa; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-30">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-gray-900 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-semibold text-gray-900">Seguimiento de Postulaciones</h1>
+                    <p class="text-xs text-gray-400">Dashboard personal</p>
+                </div>
+            </div>
+            <div id="stats-bar" class="flex items-center gap-4 text-sm text-gray-500">
+                <span id="total-count">0 postulaciones</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-6 py-10">
+        
+        <!-- Add Application Form -->
+        <div class="mb-12">
+            <button id="open-form-btn" class="w-full bg-white card-shadow border border-gray-200 rounded-2xl p-5 text-left hover-lift cursor-pointer group">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-gray-900 text-white flex items-center justify-center group-hover:bg-gray-800 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-gray-900 font-medium">Agregar nueva postulación</p>
+                        <p class="text-gray-500 text-sm mt-0.5">Registra una nueva oportunidad laboral</p>
+                    </div>
+                </div>
+            </button>
+        </div>
+
+        <!-- Form Modal -->
+        <div id="form-modal" class="fixed inset-0 z-50 hidden bg-black/40 backdrop-blur-sm items-center justify-center p-4">
+            <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto card-shadow fade-in">
+                <div class="sticky top-0 bg-white border-b border-gray-100 px-8 py-5 flex items-center justify-between rounded-t-2xl">
+                    <h2 id="modal-title" class="text-lg font-semibold text-gray-900">Nueva postulación</h2>
+                    <button id="close-modal-btn" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <form id="app-form" class="px-6 py-6 space-y-5">
+                    <input type="hidden" id="edit-id" name="id" value="">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-medium text-gray-600">Nombre de la postulación *</label>
+                            <input type="text" id="nombre" name="nombre" required 
+                                   class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-shadow" 
+                                   placeholder="Ej. Desarrollador Frontend">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-medium text-gray-600">Enlace de la postulación *</label>
+                            <input type="url" id="enlace" name="enlace" required 
+                                   class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-shadow" 
+                                   placeholder="https://ejemplo.com/oferta">
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-100">
+
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">Resultados por fase</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-medium text-gray-600">Resultado postulación</label>
+                            <select id="resultadoPostulacion" name="resultadoPostulacion" 
+                                    class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent">
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Avanza">Avanza</option>
+                                <option value="Rechazado">Rechazado / No clasifica</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-medium text-gray-600">Resultado evaluación técnica</label>
+                            <select id="resultadoEvaluacion" name="resultadoEvaluacion" 
+                                    class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent">
+                                <option>Pendiente</option>
+                                <option>Aprobada</option>
+                                <option>Reprobada</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-medium text-gray-600">Resultado evaluación curricular</label>
+                            <select id="resultadoCV" name="resultadoCV" 
+                                    class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent">
+                                <option>Pendiente</option>
+                                <option>Aprobada</option>
+                                <option>Reprobada</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-medium text-gray-600">Resultado entrevista</label>
+                            <select id="resultadoEntrevista" name="resultadoEntrevista" 
+                                    class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent">
+                                <option>Pendiente</option>
+                                <option>Agendada</option>
+                                <option>Realizada</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5 md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-600">Resultado final</label>
+                            <select id="resultadoFinal" name="resultadoFinal" 
+                                    class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent">
+                                <option>En proceso</option>
+                                <option>Contratado</option>
+                                <option>Descartado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 pt-2">
+                        <button type="submit" 
+                                class="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-medium py-2.5 px-5 rounded-xl transition-colors text-sm">
+                            Guardar postulación
+                        </button>
+                        <button type="button" id="cancel-btn" 
+                                class="px-5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Applications List -->
+        <section>
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-base font-medium text-gray-500 uppercase tracking-wide">Postulaciones</h2>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="bg-white border border-gray-200 rounded-2xl p-12 text-center card-shadow flex flex-col items-center">
+                <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-5">
+                    <svg class="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                </div>
+                <h3 class="text-gray-900 font-semibold mb-1.5">No tienes postulaciones</h3>
+                <p class="text-gray-500 text-sm max-w-sm">Agrega tu primera postulación haciendo clic en el botón superior.</p>
+            </div>
+
+            <!-- Cards Container -->
+            <div id="apps-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
+    </main>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="fixed inset-0 z-50 hidden bg-black/40 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm card-shadow fade-in">
+            <div class="px-6 py-5 border-b border-gray-100">
+                <h3 class="text-lg font-semibold text-gray-900">Eliminar postulación</h3>
+            </div>
+            <div class="px-6 py-5">
+                <p class="text-gray-600 text-sm">Estás seguro de que deseas eliminar esta postulación? Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+                <button id="cancel-delete-btn" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-xl transition-colors">Cancelar</button>
+                <button id="confirm-delete-btn" class="px-4 py-2 text-sm bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
