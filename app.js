@@ -14,6 +14,11 @@ function initSupabase() {
         alert('Configuración incompleta: falta SUPABASE_URL y SUPABASE_KEY en app.js');
         return false;
     }
+    if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+        console.error('El SDK de Supabase no se cargó. Verifica el CDN en index.html');
+        alert('No se pudo cargar el SDK de Supabase. Revisa tu conexión a internet.');
+        return false;
+    }
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     return !!supabase;
 }
@@ -558,20 +563,48 @@ function checkAndNotifyWebhook() {
 
 // ── Initialize ─────────────────────────────────────────────────
 async function init() {
-    if (!initSupabase()) {
-        loadingState.classList.add('hidden');
-        emptyState.classList.remove('hidden');
-        return;
-    }
+    // 1. Ocultar siempre "Cargando..." al terminar (haya éxito o error)
+    const hideLoading = () => {
+        if (loadingState) loadingState.classList.add('hidden');
+    };
+
     try {
+        // 2. Inicializar cliente Supabase
+        if (!initSupabase()) {
+            hideLoading();
+            emptyState.classList.remove('hidden');
+            totalCount.textContent = '0 postulaciones';
+            return;
+        }
+
+        // 3. Fetch de datos
         applications = await fetchApplications();
         renderApplications();
     } catch (e) {
         console.error('Inicialización falló:', e);
-        loadingState.classList.add('hidden');
-        emptyState.classList.remove('hidden');
+        applications = [];
+        renderApplications();
+        // Mostrar mensaje de error visible al usuario
+        totalCount.textContent = 'Error de conexión';
+        const errorBanner = document.createElement('div');
+        errorBanner.className = 'bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl mb-4 text-sm';
+        errorBanner.innerHTML = `<strong>Error:</strong> No se pudo conectar a Supabase. Revisa la consola (F12) y verifica tus credenciales en <code>app.js</code>.`;
+        const container = document.querySelector('.max-w-6xl.mx-auto.px-6.py-10');
+        if (container) container.prepend(errorBanner);
+    } finally {
+        // 4. Sea éxito o error: quitar loader SIEMPRE
+        hideLoading();
     }
-    checkAndNotifyWebhook();
+
+    // 5. Ejecutar webhook (fuera del try para no romper init)
+    try {
+        checkAndNotifyWebhook();
+    } catch (webhookErr) {
+        console.error('Error en webhook:', webhookErr);
+    }
 }
 
-init();
+init().catch(err => {
+    console.error('Error fatal en init:', err);
+    if (loadingState) loadingState.classList.add('hidden');
+});
