@@ -1,0 +1,68 @@
+---
+let applications = [];
+const loadApps = async () => {
+  const res = await fetch('/api/applications');
+  applications = await res.json();
+};
+loadApps();
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const res = await fetch('/api/applications', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(formData),
+  });
+  const newApp = await res.json();
+  applications.unshift(newApp);
+  formData = {};
+};
+
+const formData = {};
+
+<h1>Seguimiento de Postulaciones</h1>
+
+<form onSubmit={handleSubmit}>
+  <input name='enlace' placeholder='Enlace' required />
+  <input name='nombre' placeholder='Nombre' required />
+  <input name='resultadosPostulacion' placeholder='Resultados Postulación' />
+  <input name='resultadosEvaluacion' placeholder='Resultados Evaluación' />
+  <input name='resultadosCV' placeholder='Resultados CV' />
+  <input name='resultadosEntrevista' placeholder='Resultados Entrevista' />
+  <input name='resultadosFinales' placeholder='Resultados Finales' />
+  <button type='submit'>Guardar</button>
+</form>
+
+<ul>
+  {applications.map(app => (
+    <li>
+      <strong>{app.nombre}</strong> - {app.enlace}
+      <br/>
+      <small>Fecha: {app.createdAt}</small>
+      <br/>
+      Resultados:
+      <ul>
+        <li>Postulación: {app.resultadosPostulacion}</li>
+        <li>Evaluación: {app.resultadosEvaluacion}</li>
+        <li>CV: {app.resultadosCV}</li>
+        <li>Entrevista: {app.resultadosEntrevista}</li>
+        <li>Final: {app.resultadosFinales}</li>
+      </ul>
+      <button onClick={async () => {
+        await fetch('/api/applications', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: app.id })
+        });
+        applications = applications.filter(a => a.id !== app.id);
+      }}>
+        Eliminar
+      </button>
+    </li>
+  ))}
+</ul>
+</script>
+</pre>
+</body>
+</html>
+</module>
