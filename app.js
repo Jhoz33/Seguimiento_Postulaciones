@@ -1,35 +1,32 @@
 'use strict';
 
-// ── Storage Layer ──────────────────────────────────────────────
-const STORAGE_KEY = 'postulaciones';
+// ── Supabase Config ────────────────────────────────────────────
+// ▼▼▼ Coloca aquí tus credenciales de Supabase ▼▼▼
+const SUPABASE_URL = '';
+const SUPABASE_KEY = '';
+// ▲▲▲ Coloca aquí tus credenciales de Supabase ▲▲▲
 
-function loadApplications() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-        console.error('Error loading applications:', e);
-        return [];
-    }
-}
+let supabase = null;
 
-function saveApplications(apps) {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(apps));
-    } catch (e) {
-        console.error('Error saving applications:', e);
-        alert('No se pudo guardar. El almacenamiento local podría estar lleno.');
+function initSupabase() {
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+        console.error('Faltan SUPABASE_URL o SUPABASE_KEY. Edita app.js.');
+        alert('Configuración incompleta: falta SUPABASE_URL y SUPABASE_KEY en app.js');
+        return false;
     }
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    return !!supabase;
 }
 
 // ── State ──────────────────────────────────────────────────────
-let applications = loadApplications();
+let applications = [];
 let editingId = null;
 let deleteTargetId = null;
 
 // ── DOM References ─────────────────────────────────────────────
 const appsContainer = document.getElementById('apps-container');
 const emptyState = document.getElementById('empty-state');
+const loadingState = document.getElementById('loading-state');
 const formModal = document.getElementById('form-modal');
 const modalTitle = document.getElementById('modal-title');
 const appForm = document.getElementById('app-form');
@@ -45,7 +42,36 @@ const alertText = document.getElementById('alert-text');
 const warningPanel = document.getElementById('warning-panel');
 const warningText = document.getElementById('warning-text');
 
-// ── Date & Alert Helpers ──────────────────────────────────────
+// ── Color Helpers (Badges vivos) ──────────────────────────────
+const STATUS_STYLES = {
+    'Pendiente':    'bg-amber-100 text-amber-700 border border-amber-200',
+    'Avanza':       'bg-blue-100 text-blue-700 border border-blue-200',
+    'Rechazado':    'bg-red-100 text-red-700 border border-red-200',
+    'Aprobada':     'bg-emerald-100 text-emerald-700 border border-emerald-200',
+    'Reprobada':    'bg-red-100 text-red-700 border border-red-200',
+    'Agendada':     'bg-orange-100 text-orange-700 border border-orange-200',
+    'Realizada':    'bg-emerald-100 text-emerald-700 border border-emerald-200',
+    'En proceso':   'bg-amber-100 text-amber-700 border border-amber-200',
+    'Contratado':   'bg-emerald-100 text-emerald-700 border border-emerald-200',
+    'Descartado':   'bg-red-100 text-red-700 border border-red-200'
+};
+
+function statusBadge(status) {
+    const css = STATUS_STYLES[status] || 'bg-gray-100 text-gray-600 border border-gray-200';
+    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${css}">${status}</span>`;
+}
+
+// Color del borde superior de la tarjeta según estado general
+function getCardAccentColor(app) {
+    const final = app.resultadoFinal;
+    if (final === 'Contratado') return '#10b981';
+    if (final === 'Descartado') return '#ef4444';
+    if (app.resultadoPostulacion === 'Rechazado') return '#ef4444';
+    if (app.resultadoEvaluacion === 'Reprobada') return '#ef4444';
+    return '#6366f1';
+}
+
+// ── Date Helpers ──────────────────────────────────────────────
 function todayStr() {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -59,20 +85,31 @@ function dateDiffDays(dateStr) {
     return Math.round((target - today) / 86400000);
 }
 
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch { return dateStr; }
+}
+
 // Fases con fecha asociada y estado pendiente a vigilar
 const FASES_VIGILADAS = [
     { fecha: 'fechaPostulacion', estado: 'resultadoPostulacion' },
     { fecha: 'fechaEvaluacion', estado: 'resultadoEvaluacion' },
-    { fecha: 'fechaEntrevista', estado: 'resultadoEntrevista' }
+    { fecha: 'fechaCV', estado: 'resultadoCV' },
+    { fecha: 'fechaEntrevista', estado: 'resultadoEntrevista' },
+    { fecha: 'fechaFinal', estado: 'resultadoFinal' }
 ];
 
 function getAlertLevel(app) {
-    let level = 'ok';
+    let level = 'safe';
     for (const fase of FASES_VIGILADAS) {
         const fecha = app[fase.fecha];
         const estado = app[fase.estado];
         if (!fecha) continue;
-        if (estado !== 'Pendiente') continue;
+        const isPending = (estado === 'Pendiente' || estado === 'En proceso' || estado === 'Agendada');
+        if (!isPending) continue;
         const diff = dateDiffDays(fecha);
         if (diff === null) continue;
         if (diff <= 0) return 'danger';
@@ -81,13 +118,14 @@ function getAlertLevel(app) {
     return level;
 }
 
+// Panel de alertas (rojo = vencido hoy, amarillo = vence mañana)
 function renderAlertPanels() {
     let dangerCount = 0;
     let warningCount = 0;
     applications.forEach(app => {
-        const level = getAlertLevel(app);
-        if (level === 'danger') dangerCount++;
-        else if (level === 'warning') warningCount++;
+        const lvl = getAlertLevel(app);
+        if (lvl === 'danger') dangerCount++;
+        else if (lvl === 'warning') warningCount++;
     });
 
     if (dangerCount > 0) {
@@ -105,36 +143,97 @@ function renderAlertPanels() {
     }
 }
 
-// ── Status Helpers ─────────────────────────────────────────────
-const STATUS_STYLES = {
-    'Pendiente':    'bg-gray-100 text-gray-600',
-    'Avanza':       'bg-blue-50 text-blue-700',
-    'Rechazado':    'bg-red-50 text-red-600',
-    'Aprobada':     'bg-green-50 text-green-700',
-    'Reprobada':    'bg-red-50 text-red-600',
-    'Agendada':     'bg-yellow-50 text-yellow-700',
-    'Realizada':    'bg-green-50 text-green-700',
-    'En proceso':   'bg-gray-100 text-gray-700',
-    'Contratado':   'bg-green-50 text-green-700',
-    'Descartado':   'bg-red-50 text-red-600'
-};
-
-function statusBadge(statusType) {
-    const css = STATUS_STYLES[statusType] || 'bg-gray-100 text-gray-600';
-    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${css}">${statusType}</span>`;
+// ── Supabase Data Layer ──────────────────────────────────────
+function mapDbRow(row) {
+    return {
+        id: row.id,
+        nombre: row.nombre,
+        enlace: row.enlace,
+        resultadoPostulacion: row.resultado_postulacion,
+        fechaPostulacion: row.fecha_postulacion || '',
+        resultadoEvaluacion: row.resultado_evaluacion,
+        fechaEvaluacion: row.fecha_evaluacion || '',
+        resultadoCV: row.resultado_cv,
+        fechaCV: row.fecha_cv || '',
+        resultadoEntrevista: row.resultado_entrevista,
+        fechaEntrevista: row.fecha_entrevista || '',
+        resultadoFinal: row.resultado_final,
+        fechaFinal: row.fecha_final || '',
+        createdAt: row.created_at
+    };
 }
 
-// ── Render Applications ────────────────────────────────────────
+function toDbPayload(data) {
+    return {
+        nombre: data.nombre,
+        enlace: data.enlace,
+        resultado_postulacion: data.resultadoPostulacion,
+        fecha_postulacion: data.fechaPostulacion || null,
+        resultado_evaluacion: data.resultadoEvaluacion,
+        fecha_evaluacion: data.fechaEvaluacion || null,
+        resultado_cv: data.resultadoCV,
+        fecha_cv: data.fechaCV || null,
+        resultado_entrevista: data.resultadoEntrevista,
+        fecha_entrevista: data.fechaEntrevista || null,
+        resultado_final: data.resultadoFinal,
+        fecha_final: data.fechaFinal || null
+    };
+}
+
+async function fetchApplications() {
+    const { data, error } = await supabase
+        .from('postulaciones')
+        .select('*')
+        .order('created_at', { ascending: true });
+    if (error) {
+        console.error('Error fetching:', error);
+        alert('No se pudo cargar las postulaciones. Revisa tu conexión a Supabase.');
+        return [];
+    }
+    return data.map(mapDbRow);
+}
+
+async function createApplication(payload) {
+    const { data, error } = await supabase
+        .from('postulaciones')
+        .insert(toDbPayload(payload))
+        .select();
+    if (error) throw error;
+    return mapDbRow(data[0]);
+}
+
+async function updateApplication(id, payload) {
+    const { data, error } = await supabase
+        .from('postulaciones')
+        .update(toDbPayload(payload))
+        .eq('id', id)
+        .select();
+    if (error) throw error;
+    return mapDbRow(data[0]);
+}
+
+async function deleteApplication(id) {
+    const { error } = await supabase
+        .from('postulaciones')
+        .delete()
+        .eq('id', id);
+    if (error) throw error;
+}
+
+// ── Render Applications ──────────────────────────────────────
 function renderApplications() {
     if (applications.length === 0) {
         appsContainer.innerHTML = '';
         appsContainer.classList.add('hidden');
+        loadingState.classList.add('hidden');
         emptyState.classList.remove('hidden');
         totalCount.textContent = '0 postulaciones';
+        renderAlertPanels();
         return;
     }
 
     emptyState.classList.add('hidden');
+    loadingState.classList.add('hidden');
     appsContainer.classList.remove('hidden');
     totalCount.textContent = `${applications.length} postulacion${applications.length !== 1 ? 'es' : ''}`;
 
@@ -144,26 +243,44 @@ function renderApplications() {
 
     appsContainer.innerHTML = sorted.map(app => {
         const urlDisplay = app.enlace
-            ? `<a href="${app.enlace}" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-700 text-xs break-all underline underline-offset-2 line-clamp-1 transition-colors">${app.enlace}</a>`
+            ? `<a href="${app.enlace}" target="_blank" rel="noopener noreferrer" class="text-indigo-500 hover:text-indigo-600 text-xs break-all underline underline-offset-2 line-clamp-1 transition-colors">${app.enlace}</a>`
             : '<span class="text-gray-400 text-xs italic">Sin enlace</span>';
 
         const alertLevel = getAlertLevel(app);
-        let cardClasses = 'bg-white card-shadow border border-gray-100 rounded-2xl p-5 hover-lift fade-in flex flex-col';
+        let cardClasses = 'bg-slate-50 card-shadow border border-slate-200 rounded-2xl p-5 hover-lift fade-in flex flex-col';
         let alertIcon = '';
+        let accentColor = getCardAccentColor(app);
+
         if (alertLevel === 'danger') {
-            cardClasses = 'bg-red-50 card-shadow border border-red-200 rounded-2xl p-5 hover-lift fade-in flex flex-col';
+            cardClasses = 'bg-red-50 card-shadow border border-red-300 rounded-2xl p-5 hover-lift fade-in flex flex-col';
+            accentColor = '#ef4444';
             alertIcon = `<svg class="w-4 h-4 text-red-600 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
         } else if (alertLevel === 'warning') {
-            cardClasses = 'bg-yellow-50 card-shadow border border-yellow-200 rounded-2xl p-5 hover-lift fade-in flex flex-col';
+            cardClasses = 'bg-yellow-50 card-shadow border border-yellow-300 rounded-2xl p-5 hover-lift fade-in flex flex-col';
             alertIcon = `<svg class="w-4 h-4 text-yellow-600 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
         }
 
-        const fechaPostulacion = app.fechaPostulacion ? `<span class="text-gray-400 text-[10px]">${app.fechaPostulacion}</span>` : '';
-        const fechaEvaluacion = app.fechaEvaluacion ? `<span class="text-gray-400 text-[10px]">${app.fechaEvaluacion}</span>` : '';
-        const fechaEntrevista = app.fechaEntrevista ? `<span class="text-gray-400 text-[10px]">${app.fechaEntrevista}</span>` : '';
+        // Helper: renderizar fecha con ícono de calendario
+        const calIcon = `<svg class="w-3.5 h-3.5 text-gray-400 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>`;
+
+        function FechaConIcono(fechaStr) {
+            if (!fechaStr) return '<span class="text-gray-300 text-xs">—</span>';
+            return `<span class="inline-flex items-center text-sm text-gray-700 font-medium">${calIcon}${formatDate(fechaStr)}</span>`;
+        }
+
+        function FaseBlock(label, estado, fechaStr) {
+            return `
+            <div class="flex flex-col gap-1">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-500">${label}</span>
+                    ${statusBadge(estado)}
+                </div>
+                ${FechaConIcono(fechaStr)}
+            </div>`;
+        }
 
         return `
-        <article class="${cardClasses}">
+        <article class="${cardClasses}" style="border-top: 3px solid ${accentColor};">
             <div class="flex items-start justify-between mb-4">
                 <div class="min-w-0 flex-1 flex items-start">
                     ${alertIcon}
@@ -182,35 +299,17 @@ function renderApplications() {
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 mt-auto">
-                <div class="flex flex-col gap-0.5">
+            <div class="grid grid-cols-2 gap-3 mt-auto">
+                ${FaseBlock('Postulación', app.resultadoPostulacion, app.fechaPostulacion)}
+                ${FaseBlock('Eval. Técnica', app.resultadoEvaluacion, app.fechaEvaluacion)}
+                ${FaseBlock('Eval. CV', app.resultadoCV, app.fechaCV)}
+                ${FaseBlock('Entrevista', app.resultadoEntrevista, app.fechaEntrevista)}
+                <div class="flex flex-col gap-1 col-span-2 border-t border-gray-200 pt-2 mt-0">
                     <div class="flex items-center justify-between text-xs">
-                        <span class="text-gray-500">Postulación</span>
-                        ${statusBadge(app.resultadoPostulacion)}
+                        <span class="text-gray-900 font-semibold">Resultado final</span>
+                        ${statusBadge(app.resultadoFinal)}
                     </div>
-                    ${fechaPostulacion}
-                </div>
-                <div class="flex flex-col gap-0.5">
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="text-gray-500">Eval. Técnica</span>
-                        ${statusBadge(app.resultadoEvaluacion)}
-                    </div>
-                    ${fechaEvaluacion}
-                </div>
-                <div class="flex items-center justify-between text-xs">
-                    <span class="text-gray-500">Eval. Curricular</span>
-                    ${statusBadge(app.resultadoCV)}
-                </div>
-                <div class="flex flex-col gap-0.5">
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="text-gray-500">Entrevista</span>
-                        ${statusBadge(app.resultadoEntrevista)}
-                    </div>
-                    ${fechaEntrevista}
-                </div>
-                <div class="flex items-center justify-between text-xs col-span-2 border-t border-gray-100 pt-2 mt-0">
-                    <span class="text-gray-900 font-medium">Resultado final</span>
-                    ${statusBadge(app.resultadoFinal)}
+                    ${FechaConIcono(app.fechaFinal)}
                 </div>
             </div>
         </article>`;
@@ -242,9 +341,11 @@ function getFormData() {
         resultadoEvaluacion: document.getElementById('resultadoEvaluacion').value,
         fechaEvaluacion: document.getElementById('fechaEvaluacion').value,
         resultadoCV: document.getElementById('resultadoCV').value,
+        fechaCV: document.getElementById('fechaCV').value,
         resultadoEntrevista: document.getElementById('resultadoEntrevista').value,
         fechaEntrevista: document.getElementById('fechaEntrevista').value,
-        resultadoFinal: document.getElementById('resultadoFinal').value
+        resultadoFinal: document.getElementById('resultadoFinal').value,
+        fechaFinal: document.getElementById('fechaFinal').value
     };
     return data;
 }
@@ -290,9 +391,11 @@ function handleEdit(id) {
     document.getElementById('resultadoEvaluacion').value = app.resultadoEvaluacion;
     document.getElementById('fechaEvaluacion').value = app.fechaEvaluacion || '';
     document.getElementById('resultadoCV').value = app.resultadoCV;
+    document.getElementById('fechaCV').value = app.fechaCV || '';
     document.getElementById('resultadoEntrevista').value = app.resultadoEntrevista;
     document.getElementById('fechaEntrevista').value = app.fechaEntrevista || '';
     document.getElementById('resultadoFinal').value = app.resultadoFinal;
+    document.getElementById('fechaFinal').value = app.fechaFinal || '';
     openFormModal(true);
 }
 
@@ -304,11 +407,16 @@ function handleDeleteRequest(id) {
     document.body.style.overflow = 'hidden';
 }
 
-function confirmDelete() {
+async function confirmDelete() {
     if (deleteTargetId) {
-        applications = applications.filter(a => a.id !== deleteTargetId);
-        saveApplications(applications);
-        renderApplications();
+        try {
+            await deleteApplication(deleteTargetId);
+            applications = applications.filter(a => a.id !== deleteTargetId);
+            renderApplications();
+        } catch (e) {
+            console.error('Error deleting:', e);
+            alert('No se pudo eliminar la postulación.');
+        }
     }
     deleteTargetId = null;
     deleteModal.classList.add('hidden');
@@ -324,7 +432,7 @@ function cancelDelete() {
 }
 
 // ── Event: Submit Form ─────────────────────────────────────────
-appForm.addEventListener('submit', (e) => {
+appForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = getFormData();
 
@@ -341,23 +449,23 @@ appForm.addEventListener('submit', (e) => {
         return;
     }
 
-    if (editingId) {
-        const index = applications.findIndex(a => a.id === editingId);
-        if (index > -1) {
-            applications[index] = { ...applications[index], ...data };
+    try {
+        if (editingId) {
+            const updated = await updateApplication(editingId, data);
+            const index = applications.findIndex(a => a.id === editingId);
+            if (index > -1) applications[index] = updated;
+        } else {
+            const newApp = await createApplication(data);
+            applications.push(newApp);
         }
-    } else {
-        const newApp = {
-            ...data,
-            id: crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now(),
-            createdAt: new Date().toISOString()
-        };
-        applications.push(newApp);
-    }
 
-    saveApplications(applications);
-    closeFormModal();
-    renderApplications();
+        closeFormModal();
+        renderApplications();
+        checkAndNotifyWebhook();
+    } catch (error) {
+        console.error('Error saving:', error);
+        alert('Ocurrió un error al guardar la postulación. Revisa tu conexión a Supabase.');
+    }
 });
 
 // ── Event: Open Form Modal ─────────────────────────────────────
@@ -392,9 +500,7 @@ confirmDeleteBtn.addEventListener('click', confirmDelete);
 cancelDeleteBtn.addEventListener('click', cancelDelete);
 
 // ── Webhook: Notificación Externa (n8n) ───────────────────────
-// Esta función envía una alerta a un webhook de n8n cuando una
-// postulación tiene una fecha vencida y sigue pendiente.
-// Reemplaza WEBHOOK_URL con la URL de tu flujo de n8n.
+// Reemplaza WEBHOOK_URL con la URL de tu flujo de n8n
 // const WEBHOOK_URL = 'https://n8n.tu-dominio.com/webhook/postulaciones';
 //
 // async function triggerNotificationWebhook(postulacionVencida) {
@@ -426,7 +532,9 @@ function collectVencidas() {
         for (const fase of FASES_VIGILADAS) {
             const fecha = app[fase.fecha];
             const estado = app[fase.estado];
-            if (!fecha || estado !== 'Pendiente') continue;
+            if (!fecha) continue;
+            const isPending = (estado === 'Pendiente' || estado === 'En proceso' || estado === 'Agendada');
+            if (!isPending) continue;
             const diff = dateDiffDays(fecha);
             if (diff !== null && diff <= 0) {
                 fasesVencidas.push({ fase: fase.estado, fecha });
@@ -448,6 +556,22 @@ function checkAndNotifyWebhook() {
     }
 }
 
-// ── Initial Render ─────────────────────────────────────────────
-renderApplications();
-checkAndNotifyWebhook();
+// ── Initialize ─────────────────────────────────────────────────
+async function init() {
+    if (!initSupabase()) {
+        loadingState.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+    }
+    try {
+        applications = await fetchApplications();
+        renderApplications();
+    } catch (e) {
+        console.error('Inicialización falló:', e);
+        loadingState.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+    }
+    checkAndNotifyWebhook();
+}
+
+init();
