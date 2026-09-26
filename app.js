@@ -637,28 +637,24 @@ async function init() {
     // 5. Inicializar flatpickr para campos con hora
     if (window.flatpickr) {
         window.fpEval = flatpickr('#fechaEvaluacion', {
-            enableTime: true,
-            time_24hr: false,
+            enableTime: false,
             altInput: true,
-            altFormat: 'Y-m-d h:i K',
-            dateFormat: 'c',
+            altFormat: 'Y-m-d',
+            dateFormat: 'Y-m-d',
             allowInput: true,
             clearButton: true,
-            minuteIncrement: 15,
             defaultDate: null,
             onReady: function(){ if(!this.input.value){ this.clear(); } },
             onOpen: function(){ if(!this.selectedDates.length){ this.setDate(null, false); } },
             onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
         });
         window.fpEntrevista = flatpickr('#fechaEntrevista', {
-            enableTime: true,
-            time_24hr: false,
+            enableTime: false,
             altInput: true,
-            altFormat: 'Y-m-d h:i K',
-            dateFormat: 'c',
+            altFormat: 'Y-m-d',
+            dateFormat: 'Y-m-d',
             allowInput: true,
             clearButton: true,
-            minuteIncrement: 15,
             defaultDate: null,
             onReady: function(){ if(!this.input.value){ this.clear(); } },
             onOpen: function(){ if(!this.selectedDates.length){ this.setDate(null, false); } },
