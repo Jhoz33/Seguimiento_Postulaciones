@@ -640,6 +640,8 @@ async function init() {
             clearButton: true,
             minuteIncrement: 15,
             defaultDate: null,
+            onReady: function(){ if(!this.input.value){ this.clear(); } },
+            onOpen: function(){ if(!this.selectedDates.length){ this.setDate(null, false); } },
             onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
         });
         window.fpEntrevista = flatpickr('#fechaEntrevista', {
@@ -652,6 +654,8 @@ async function init() {
             clearButton: true,
             minuteIncrement: 15,
             defaultDate: null,
+            onReady: function(){ if(!this.input.value){ this.clear(); } },
+            onOpen: function(){ if(!this.selectedDates.length){ this.setDate(null, false); } },
             onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
         });
     }
