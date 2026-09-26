@@ -683,7 +683,33 @@ async function init() {
         hideLoading();
     }
 
-    // 5. Hora manual opcional, sin flatpickr para evitar autollenado
+    // 5. Inicializar flatpickr para hora opcional, 12h AM/PM
+    if (window.flatpickr) {
+        window.fpEvalTime = flatpickr('#fechaEvaluacionHora', {
+            enableTime: true,
+            noCalendar: true,
+            time_24hr: false,
+            dateFormat: 'h:i K',
+            allowInput: true,
+            minuteIncrement: 15,
+            defaultDate: null,
+            onReady: function(){ this.clear(); },
+            onOpen: function(){ if(!this.selectedDates.length){ this.setDate(null, false); } },
+            onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
+        });
+        window.fpEntrevistaTime = flatpickr('#fechaEntrevistaHora', {
+            enableTime: true,
+            noCalendar: true,
+            time_24hr: false,
+            dateFormat: 'h:i K',
+            allowInput: true,
+            minuteIncrement: 15,
+            defaultDate: null,
+            onReady: function(){ this.clear(); },
+            onOpen: function(){ if(!this.selectedDates.length){ this.setDate(null, false); } },
+            onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
+        });
+    }
 
     // 6. Ejecutar webhook (fuera del try para no romper init)
     try {
