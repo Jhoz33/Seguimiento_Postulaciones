@@ -97,9 +97,9 @@ function formatDate(dateStr) {
         const d = new Date(dateStr);
         if (isNaN(d)) return dateStr;
         const datePart = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-        const hours = d.getHours();
-        const minutes = d.getMinutes();
-        if (hours !== 0 || minutes !== 0) {
+        // Mostrar hora solo si la cadena original trae componente de hora
+        const hasTime = /[T ]\d{2}:\d{2}/.test(dateStr);
+        if (hasTime) {
             const timePart = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
             return `${datePart}, ${timePart}`;
         }
