@@ -638,7 +638,9 @@ async function init() {
             dateFormat: 'Y-m-d\\TH:i',
             allowInput: true,
             clearButton: true,
-            minuteIncrement: 15
+            minuteIncrement: 15,
+            defaultDate: null,
+            onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
         });
         window.fpEntrevista = flatpickr('#fechaEntrevista', {
             enableTime: true,
@@ -648,7 +650,9 @@ async function init() {
             dateFormat: 'Y-m-d\\TH:i',
             allowInput: true,
             clearButton: true,
-            minuteIncrement: 15
+            minuteIncrement: 15,
+            defaultDate: null,
+            onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
         });
     }
 
