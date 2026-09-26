@@ -290,30 +290,41 @@ function renderApplications() {
 
     renderAlertPanels();
 
-    const getNextDate = (app) => {
-        const dates = [
-            app.fechaPostulacion,
-            app.fechaEvaluacion,
-            app.fechaCV,
-            app.fechaEntrevista,
-            app.fechaFinal
-        ].filter(Boolean);
-        if (dates.length === 0) return null;
-        // Parse dates as local
-        const parsed = dates.map(d => {
-            if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
-                const [y,m,day] = d.split('-').map(Number);
-                return new Date(y, m-1, day);
+    const getSortDate = (app) => {
+        let earliest = null;
+        for (const fase of FASES_VIGILADAS) {
+            const estado = app[fase.estado];
+            const isPending = (estado === 'Pendiente' || estado === 'En proceso' || estado === 'Agendada');
+            if (!isPending) continue;
+            const fechaEvento = app[fase.fecha];
+            const fechaResultadoKey = 'fechaResultado' + fase.fecha.replace('fecha','');
+            const fechaResultado = app[fechaResultadoKey];
+            let fechaParaUsar = null;
+            if (fechaEvento && fechaResultado) {
+                fechaParaUsar = new Date(fechaEvento) > new Date(fechaResultado) ? fechaEvento : fechaResultado;
+            } else if (fechaEvento) {
+                fechaParaUsar = fechaEvento;
+            } else if (fechaResultado) {
+                fechaParaUsar = fechaResultado;
             }
-            return new Date(d);
-        }).filter(d => !isNaN(d));
-        if (parsed.length === 0) return null;
-        return new Date(Math.min(...parsed.map(d => d.getTime())));
+            if (!fechaParaUsar) continue;
+            // Parse local
+            let d;
+            if (/^\d{4}-\d{2}-\d{2}$/.test(fechaParaUsar)) {
+                const [y,m,day] = fechaParaUsar.split('-').map(Number);
+                d = new Date(y, m-1, day);
+            } else {
+                d = new Date(fechaParaUsar);
+            }
+            if (isNaN(d)) continue;
+            if (!earliest || d < earliest) earliest = d;
+        }
+        return earliest;
     };
 
     const sorted = [...applications].sort((a,b) => {
-        const da = getNextDate(a);
-        const db = getNextDate(b);
+        const da = getSortDate(a);
+        const db = getSortDate(b);
         if (!da && !db) return 0;
         if (!da) return 1;
         if (!db) return -1;
