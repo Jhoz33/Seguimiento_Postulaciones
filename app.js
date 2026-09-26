@@ -366,17 +366,19 @@ function escapeHtml(text) {
 // ── Helper: Get form data ──────────────────────────────────────
 function getFormData() {
     const fechaEvaluacionDate = document.getElementById('fechaEvaluacion').value;
-    const fechaEvaluacionHora = document.getElementById('fechaEvaluacionHora').value;
     const fechaEntrevistaDate = document.getElementById('fechaEntrevista').value;
-    const fechaEntrevistaHora = document.getElementById('fechaEntrevistaHora').value;
     
-    const combineDateTime = (dateStr, timeStr) => {
+    const combineDateTime = (dateStr, fpTime) => {
         if (!dateStr) return null;
-        if (!timeStr) {
-            // Fecha obligatoria, hora opcional -> guardar a medianoche
+        if (!fpTime || !fpTime.selectedDates || !fpTime.selectedDates[0]) {
+            // Sin hora -> medianoche
             return new Date(dateStr + 'T00:00:00').toISOString();
         }
-        return new Date(dateStr + 'T' + timeStr).toISOString();
+        const timeDate = fpTime.selectedDates[0];
+        // Combinar fecha del input con hora del picker
+        const [y,m,d] = dateStr.split('-').map(Number);
+        const dateObj = new Date(y, m-1, d, timeDate.getHours(), timeDate.getMinutes());
+        return dateObj.toISOString();
     };
     
     const data = {
@@ -386,13 +388,13 @@ function getFormData() {
         fechaPostulacion: document.getElementById('fechaPostulacion').value,
         fechaResultadoPostulacion: document.getElementById('fechaResultadoPostulacion').value,
         resultadoEvaluacion: document.getElementById('resultadoEvaluacion').value,
-        fechaEvaluacion: combineDateTime(fechaEvaluacionDate, fechaEvaluacionHora),
+        fechaEvaluacion: combineDateTime(fechaEvaluacionDate, window.fpEvalTime),
         fechaResultadoEvaluacion: document.getElementById('fechaResultadoEvaluacion').value,
         resultadoCV: document.getElementById('resultadoCV').value,
         fechaCV: document.getElementById('fechaCV').value,
         fechaResultadoCV: document.getElementById('fechaResultadoCV').value,
         resultadoEntrevista: document.getElementById('resultadoEntrevista').value,
-        fechaEntrevista: combineDateTime(fechaEntrevistaDate, fechaEntrevistaHora),
+        fechaEntrevista: combineDateTime(fechaEntrevistaDate, window.fpEntrevistaTime),
         fechaResultadoEntrevista: document.getElementById('fechaResultadoEntrevista').value,
         resultadoFinal: document.getElementById('resultadoFinal').value,
         fechaFinal: document.getElementById('fechaFinal').value
@@ -406,9 +408,9 @@ function resetForm() {
     document.getElementById('edit-id').value = '';
     editingId = null;
     modalTitle.textContent = 'Nueva postulación';
-    // Clear date/time inputs
-    document.getElementById('fechaEvaluacionHora').value = '';
-    document.getElementById('fechaEntrevistaHora').value = '';
+    // Clear time pickers
+    if (window.fpEvalTime) window.fpEvalTime.clear();
+    if (window.fpEntrevistaTime) window.fpEntrevistaTime.clear();
 }
 
 // ── Helper: Open / Close Modal ─────────────────────────────────
@@ -448,7 +450,9 @@ function handleEdit(id) {
         const d = new Date(app.fechaEvaluacion);
         if (!isNaN(d)) {
             document.getElementById('fechaEvaluacion').value = d.toISOString().split('T')[0];
-            document.getElementById('fechaEvaluacionHora').value = d.toTimeString().slice(0,5);
+            const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
+            document.getElementById('fechaEvaluacionHora').value = timeStr;
+            if (window.fpEvalTime) window.fpEvalTime.setDate(d, false);
         }
     }
     document.getElementById('fechaResultadoEvaluacion').value = app.fechaResultadoEvaluacion || '';
@@ -461,7 +465,9 @@ function handleEdit(id) {
         const d = new Date(app.fechaEntrevista);
         if (!isNaN(d)) {
             document.getElementById('fechaEntrevista').value = d.toISOString().split('T')[0];
-            document.getElementById('fechaEntrevistaHora').value = d.toTimeString().slice(0,5);
+            const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
+            document.getElementById('fechaEntrevistaHora').value = timeStr;
+            if (window.fpEntrevistaTime) window.fpEntrevistaTime.setDate(d, false);
         }
     }
     document.getElementById('fechaResultadoEntrevista').value = app.fechaResultadoEntrevista || '';
@@ -662,8 +668,35 @@ async function init() {
         hideLoading();
     }
 
-    // 5. Flatpickr ya no se usa para fecha/hora, se usan inputs nativos
-    // Fecha obligatoria, hora opcional con input type="date" y type="time"
+    // 5. Inicializar flatpickr solo para hora, 12h AM/PM
+    if (window.flatpickr) {
+        window.fpEvalTime = flatpickr('#fechaEvaluacionHora', {
+            enableTime: true,
+            noCalendar: true,
+            time_24hr: false,
+            altInput: false,
+            dateFormat: 'h:i K',
+            allowInput: true,
+            clearButton: true,
+            minuteIncrement: 15,
+            defaultDate: null,
+            onReady: function(){ if(!this.input.value){ this.clear(); } },
+            onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
+        });
+        window.fpEntrevistaTime = flatpickr('#fechaEntrevistaHora', {
+            enableTime: true,
+            noCalendar: true,
+            time_24hr: false,
+            altInput: false,
+            dateFormat: 'h:i K',
+            allowInput: true,
+            clearButton: true,
+            minuteIncrement: 15,
+            defaultDate: null,
+            onReady: function(){ if(!this.input.value){ this.clear(); } },
+            onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
+        });
+    }
 
     // 6. Ejecutar webhook (fuera del try para no romper init)
     try {
