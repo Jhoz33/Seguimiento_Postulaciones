@@ -294,7 +294,7 @@ function renderApplications() {
             return `
             <div class="flex flex-col gap-1">
                 <div class="flex items-center justify-between text-xs">
-                    <span class="text-gray-500 font-semibold">${label}</span>
+                    <span class="text-gray-900 font-semibold">${label}</span>
                     ${statusBadge(estado)}
                 </div>
                 <div class="flex flex-col gap-0.5 text-[11px]">
