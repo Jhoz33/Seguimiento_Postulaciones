@@ -387,6 +387,8 @@ function resetForm() {
     document.getElementById('edit-id').value = '';
     editingId = null;
     modalTitle.textContent = 'Nueva postulación';
+    if (window.fpEval) window.fpEval.clear();
+    if (window.fpEntrevista) window.fpEntrevista.clear();
 }
 
 // ── Helper: Open / Close Modal ─────────────────────────────────
@@ -421,13 +423,13 @@ function handleEdit(id) {
     document.getElementById('fechaPostulacion').value = app.fechaPostulacion || '';
     document.getElementById('fechaResultadoPostulacion').value = app.fechaResultadoPostulacion || '';
     document.getElementById('resultadoEvaluacion').value = app.resultadoEvaluacion;
-    document.getElementById('fechaEvaluacion').value = app.fechaEvaluacion || '';
+    if (window.fpEval) window.fpEval.setDate(app.fechaEvaluacion || null, true);
     document.getElementById('fechaResultadoEvaluacion').value = app.fechaResultadoEvaluacion || '';
     document.getElementById('resultadoCV').value = app.resultadoCV;
     document.getElementById('fechaCV').value = app.fechaCV || '';
     document.getElementById('fechaResultadoCV').value = app.fechaResultadoCV || '';
     document.getElementById('resultadoEntrevista').value = app.resultadoEntrevista;
-    document.getElementById('fechaEntrevista').value = app.fechaEntrevista || '';
+    if (window.fpEntrevista) window.fpEntrevista.setDate(app.fechaEntrevista || null, true);
     document.getElementById('fechaResultadoEntrevista').value = app.fechaResultadoEntrevista || '';
     document.getElementById('resultadoFinal').value = app.resultadoFinal;
     document.getElementById('fechaFinal').value = app.fechaFinal || '';
@@ -628,21 +630,25 @@ async function init() {
 
     // 5. Inicializar flatpickr para campos con hora
     if (window.flatpickr) {
-        flatpickr('#fechaEvaluacion', {
+        window.fpEval = flatpickr('#fechaEvaluacion', {
             enableTime: true,
             time_24hr: false,
             altInput: true,
             altFormat: 'Y-m-d h:i K',
             dateFormat: 'Y-m-d\\TH:i',
-            allowInput: true
+            allowInput: true,
+            clearButton: true,
+            minuteIncrement: 15
         });
-        flatpickr('#fechaEntrevista', {
+        window.fpEntrevista = flatpickr('#fechaEntrevista', {
             enableTime: true,
             time_24hr: false,
             altInput: true,
             altFormat: 'Y-m-d h:i K',
             dateFormat: 'Y-m-d\\TH:i',
-            allowInput: true
+            allowInput: true,
+            clearButton: true,
+            minuteIncrement: 15
         });
     }
 
