@@ -368,18 +368,25 @@ function getFormData() {
     const fechaEvaluacionDate = document.getElementById('fechaEvaluacion').value;
     const fechaEntrevistaDate = document.getElementById('fechaEntrevista').value;
     
-    const combineDateTime = (dateStr, fpTime, timeInputId) => {
+    const combineDateTime = (dateStr, timeInputId) => {
         if (!dateStr) return null;
-        const timeVal = document.getElementById(timeInputId).value;
+        const timeVal = document.getElementById(timeInputId).value.trim();
         if (!timeVal) {
             return new Date(dateStr + 'T00:00:00').toISOString();
         }
-        // Parse time from flatpickr format h:i K
-        const dt = new Date(dateStr + ' ' + timeVal);
-        if (isNaN(dt)) {
+        // Intentar parsear formato h:i AM/PM
+        const match = timeVal.match(/(\d{1,2}):(\d{2})\s*([AP]M)/i);
+        if (!match) {
             return new Date(dateStr + 'T00:00:00').toISOString();
         }
-        return dt.toISOString();
+        let hours = parseInt(match[1],10);
+        const minutes = parseInt(match[2],10);
+        const ampm = match[3].toUpperCase();
+        if (ampm === 'PM' && hours !== 12) hours += 12;
+        if (ampm === 'AM' && hours === 12) hours = 0;
+        const [y,m,d] = dateStr.split('-').map(Number);
+        const dateObj = new Date(Date.UTC(y, m-1, d, hours, minutes));
+        return dateObj.toISOString();
     };
     
     const data = {
@@ -389,13 +396,13 @@ function getFormData() {
         fechaPostulacion: document.getElementById('fechaPostulacion').value,
         fechaResultadoPostulacion: document.getElementById('fechaResultadoPostulacion').value,
         resultadoEvaluacion: document.getElementById('resultadoEvaluacion').value,
-        fechaEvaluacion: combineDateTime(fechaEvaluacionDate, window.fpEvalTime, 'fechaEvaluacionHora'),
+        fechaEvaluacion: combineDateTime(fechaEvaluacionDate, 'fechaEvaluacionHora'),
         fechaResultadoEvaluacion: document.getElementById('fechaResultadoEvaluacion').value,
         resultadoCV: document.getElementById('resultadoCV').value,
         fechaCV: document.getElementById('fechaCV').value,
         fechaResultadoCV: document.getElementById('fechaResultadoCV').value,
         resultadoEntrevista: document.getElementById('resultadoEntrevista').value,
-        fechaEntrevista: combineDateTime(fechaEntrevistaDate, window.fpEntrevistaTime, 'fechaEntrevistaHora'),
+        fechaEntrevista: combineDateTime(fechaEntrevistaDate, 'fechaEntrevistaHora'),
         fechaResultadoEntrevista: document.getElementById('fechaResultadoEntrevista').value,
         resultadoFinal: document.getElementById('resultadoFinal').value,
         fechaFinal: document.getElementById('fechaFinal').value
@@ -451,9 +458,12 @@ function handleEdit(id) {
         const d = new Date(app.fechaEvaluacion);
         if (!isNaN(d)) {
             document.getElementById('fechaEvaluacion').value = d.toISOString().split('T')[0];
-            const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
-            document.getElementById('fechaEvaluacionHora').value = timeStr;
-            if (window.fpEvalTime) window.fpEvalTime.setDate(d, false);
+            const hours = d.getUTCHours();
+            const minutes = d.getUTCMinutes();
+            if (hours !== 0 || minutes !== 0) {
+                const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
+                document.getElementById('fechaEvaluacionHora').value = timeStr;
+            }
         }
     }
     document.getElementById('fechaResultadoEvaluacion').value = app.fechaResultadoEvaluacion || '';
@@ -466,9 +476,12 @@ function handleEdit(id) {
         const d = new Date(app.fechaEntrevista);
         if (!isNaN(d)) {
             document.getElementById('fechaEntrevista').value = d.toISOString().split('T')[0];
-            const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
-            document.getElementById('fechaEntrevistaHora').value = timeStr;
-            if (window.fpEntrevistaTime) window.fpEntrevistaTime.setDate(d, false);
+            const hours = d.getUTCHours();
+            const minutes = d.getUTCMinutes();
+            if (hours !== 0 || minutes !== 0) {
+                const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
+                document.getElementById('fechaEntrevistaHora').value = timeStr;
+            }
         }
     }
     document.getElementById('fechaResultadoEntrevista').value = app.fechaResultadoEntrevista || '';
@@ -669,37 +682,7 @@ async function init() {
         hideLoading();
     }
 
-    // 5. Inicializar flatpickr solo para hora, 12h AM/PM
-    if (window.flatpickr) {
-        window.fpEvalTime = flatpickr('#fechaEvaluacionHora', {
-            enableTime: true,
-            noCalendar: true,
-            time_24hr: false,
-            altInput: false,
-            dateFormat: 'h:i K',
-            allowInput: true,
-            clearButton: true,
-            minuteIncrement: 15,
-            defaultDate: null,
-            onReady: function(){ if(!this.input.value){ this.clear(); } },
-            onOpen: function(){ if(!this.selectedDates.length){ this.setDate(null, false); } },
-            onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
-        });
-        window.fpEntrevistaTime = flatpickr('#fechaEntrevistaHora', {
-            enableTime: true,
-            noCalendar: true,
-            time_24hr: false,
-            altInput: false,
-            dateFormat: 'h:i K',
-            allowInput: true,
-            clearButton: true,
-            minuteIncrement: 15,
-            defaultDate: null,
-            onReady: function(){ if(!this.input.value){ this.clear(); } },
-            onOpen: function(){ if(!this.selectedDates.length){ this.setDate(null, false); } },
-            onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
-        });
-    }
+    // 5. Hora manual opcional, sin flatpickr para evitar autollenado
 
     // 6. Ejecutar webhook (fuera del try para no romper init)
     try {
