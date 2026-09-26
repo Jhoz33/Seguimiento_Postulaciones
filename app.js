@@ -156,12 +156,16 @@ function mapDbRow(row) {
         enlace: row.enlace,
         resultadoPostulacion: row.resultado_postulacion,
         fechaPostulacion: row.fecha_postulacion || '',
+        fechaResultadoPostulacion: row.fecha_resultado_postulacion || '',
         resultadoEvaluacion: row.resultado_evaluacion,
         fechaEvaluacion: row.fecha_evaluacion || '',
+        fechaResultadoEvaluacion: row.fecha_resultado_evaluacion || '',
         resultadoCV: row.resultado_cv,
         fechaCV: row.fecha_cv || '',
+        fechaResultadoCV: row.fecha_resultado_cv || '',
         resultadoEntrevista: row.resultado_entrevista,
         fechaEntrevista: row.fecha_entrevista || '',
+        fechaResultadoEntrevista: row.fecha_resultado_entrevista || '',
         resultadoFinal: row.resultado_final,
         fechaFinal: row.fecha_final || '',
         createdAt: row.created_at
@@ -174,12 +178,16 @@ function toDbPayload(data) {
         enlace: data.enlace,
         resultado_postulacion: data.resultadoPostulacion,
         fecha_postulacion: data.fechaPostulacion || null,
+        fecha_resultado_postulacion: data.fechaResultadoPostulacion || null,
         resultado_evaluacion: data.resultadoEvaluacion,
         fecha_evaluacion: data.fechaEvaluacion || null,
+        fecha_resultado_evaluacion: data.fechaResultadoEvaluacion || null,
         resultado_cv: data.resultadoCV,
         fecha_cv: data.fechaCV || null,
+        fecha_resultado_cv: data.fechaResultadoCV || null,
         resultado_entrevista: data.resultadoEntrevista,
         fecha_entrevista: data.fechaEntrevista || null,
+        fecha_resultado_entrevista: data.fechaResultadoEntrevista || null,
         resultado_final: data.resultadoFinal,
         fecha_final: data.fechaFinal || null
     };
@@ -273,14 +281,18 @@ function renderApplications() {
             return `<span class="inline-flex items-center text-sm text-gray-700 font-medium">${calIcon}${formatDate(fechaStr)}</span>`;
         }
 
-        function FaseBlock(label, estado, fechaStr) {
+        function FaseBlock(label, estado, fechaEvento, fechaResultado) {
             return `
             <div class="flex flex-col gap-1">
                 <div class="flex items-center justify-between text-xs">
                     <span class="text-gray-500">${label}</span>
                     ${statusBadge(estado)}
                 </div>
-                ${FechaConIcono(fechaStr)}
+                <div class="flex flex-col gap-0.5 text-[11px]">
+                    <span class="text-gray-400">Evento</span>
+                    ${FechaConIcono(fechaEvento)}
+                    ${fechaResultado ? `<span class="text-gray-400 mt-1">Resultado</span>${FechaConIcono(fechaResultado)}` : ''}
+                </div>
             </div>`;
         }
 
@@ -305,10 +317,10 @@ function renderApplications() {
             </div>
 
             <div class="grid grid-cols-2 gap-3 mt-auto">
-                ${FaseBlock('Postulación', app.resultadoPostulacion, app.fechaPostulacion)}
-                ${FaseBlock('Eval. Técnica', app.resultadoEvaluacion, app.fechaEvaluacion)}
-                ${FaseBlock('Eval. CV', app.resultadoCV, app.fechaCV)}
-                ${FaseBlock('Entrevista', app.resultadoEntrevista, app.fechaEntrevista)}
+                ${FaseBlock('Postulación', app.resultadoPostulacion, app.fechaPostulacion, app.fechaResultadoPostulacion)}
+                ${FaseBlock('Eval. Técnica', app.resultadoEvaluacion, app.fechaEvaluacion, app.fechaResultadoEvaluacion)}
+                ${FaseBlock('Eval. CV', app.resultadoCV, app.fechaCV, app.fechaResultadoCV)}
+                ${FaseBlock('Entrevista', app.resultadoEntrevista, app.fechaEntrevista, app.fechaResultadoEntrevista)}
                 <div class="flex flex-col gap-1 col-span-2 border-t border-gray-200 pt-2 mt-0">
                     <div class="flex items-center justify-between text-xs">
                         <span class="text-gray-900 font-semibold">Resultado final</span>
@@ -343,12 +355,16 @@ function getFormData() {
         enlace: document.getElementById('enlace').value.trim(),
         resultadoPostulacion: document.getElementById('resultadoPostulacion').value,
         fechaPostulacion: document.getElementById('fechaPostulacion').value,
+        fechaResultadoPostulacion: document.getElementById('fechaResultadoPostulacion').value,
         resultadoEvaluacion: document.getElementById('resultadoEvaluacion').value,
         fechaEvaluacion: document.getElementById('fechaEvaluacion').value,
+        fechaResultadoEvaluacion: document.getElementById('fechaResultadoEvaluacion').value,
         resultadoCV: document.getElementById('resultadoCV').value,
         fechaCV: document.getElementById('fechaCV').value,
+        fechaResultadoCV: document.getElementById('fechaResultadoCV').value,
         resultadoEntrevista: document.getElementById('resultadoEntrevista').value,
         fechaEntrevista: document.getElementById('fechaEntrevista').value,
+        fechaResultadoEntrevista: document.getElementById('fechaResultadoEntrevista').value,
         resultadoFinal: document.getElementById('resultadoFinal').value,
         fechaFinal: document.getElementById('fechaFinal').value
     };
@@ -393,12 +409,16 @@ function handleEdit(id) {
     document.getElementById('enlace').value = app.enlace || '';
     document.getElementById('resultadoPostulacion').value = app.resultadoPostulacion;
     document.getElementById('fechaPostulacion').value = app.fechaPostulacion || '';
+    document.getElementById('fechaResultadoPostulacion').value = app.fechaResultadoPostulacion || '';
     document.getElementById('resultadoEvaluacion').value = app.resultadoEvaluacion;
     document.getElementById('fechaEvaluacion').value = app.fechaEvaluacion || '';
+    document.getElementById('fechaResultadoEvaluacion').value = app.fechaResultadoEvaluacion || '';
     document.getElementById('resultadoCV').value = app.resultadoCV;
     document.getElementById('fechaCV').value = app.fechaCV || '';
+    document.getElementById('fechaResultadoCV').value = app.fechaResultadoCV || '';
     document.getElementById('resultadoEntrevista').value = app.resultadoEntrevista;
     document.getElementById('fechaEntrevista').value = app.fechaEntrevista || '';
+    document.getElementById('fechaResultadoEntrevista').value = app.fechaResultadoEntrevista || '';
     document.getElementById('resultadoFinal').value = app.resultadoFinal;
     document.getElementById('fechaFinal').value = app.fechaFinal || '';
     openFormModal(true);

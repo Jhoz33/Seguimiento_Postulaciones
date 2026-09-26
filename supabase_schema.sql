@@ -10,21 +10,25 @@ CREATE TABLE postulaciones (
     nombre TEXT NOT NULL,
     enlace TEXT,
     
-    -- Resultado + Fecha de Postulación
+    -- Resultado + Fecha de Postulación + Fecha Resultado Postulación
     resultado_postulacion TEXT DEFAULT 'Pendiente',
     fecha_postulacion DATE,
+    fecha_resultado_postulacion DATE,
     
-    -- Resultado + Fecha de Evaluación Técnica
+    -- Resultado + Fecha de Evaluación Técnica + Fecha Resultado Evaluación Técnica
     resultado_evaluacion TEXT DEFAULT 'Pendiente',
     fecha_evaluacion DATE,
+    fecha_resultado_evaluacion DATE,
     
-    -- Resultado + Fecha de Evaluación Curricular
+    -- Resultado + Fecha de Evaluación Curricular + Fecha Resultado Evaluación Curricular
     resultado_cv TEXT DEFAULT 'Pendiente',
     fecha_cv DATE,
+    fecha_resultado_cv DATE,
     
-    -- Resultado + Fecha de Entrevista
+    -- Resultado + Fecha de Entrevista + Fecha Resultado Entrevista
     resultado_entrevista TEXT DEFAULT 'Pendiente',
     fecha_entrevista DATE,
+    fecha_resultado_entrevista DATE,
     
     -- Resultado + Fecha Final
     resultado_final TEXT DEFAULT 'En proceso',
