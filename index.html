@@ -6,6 +6,8 @@
     <title>Seguimiento de Postulaciones</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -153,8 +155,8 @@
                         </div>
                         <div class="space-y-1.5">
                             <label class="block text-sm font-medium text-gray-600">Fecha Eval. Técnica</label>
-                            <input type="datetime-local" id="fechaEvaluacion" name="fechaEvaluacion" 
-                                    class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <input type="text" id="fechaEvaluacion" name="fechaEvaluacion" 
+                                    class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="YYYY-MM-DD HH:MM AM/PM">
                         </div>
                         <div class="space-y-1.5">
                             <label class="block text-sm font-medium text-gray-600">Resultado Eval. Técnica</label>
@@ -199,8 +201,8 @@
                         </div>
                         <div class="space-y-1.5">
                             <label class="block text-sm font-medium text-gray-600">Fecha entrevista</label>
-                            <input type="datetime-local" id="fechaEntrevista" name="fechaEntrevista" 
-                                    class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <input type="text" id="fechaEntrevista" name="fechaEntrevista" 
+                                    class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="YYYY-MM-DD HH:MM AM/PM">
                         </div>
                         <div class="space-y-1.5">
                             <label class="block text-sm font-medium text-gray-600">Resultado entrevista</label>

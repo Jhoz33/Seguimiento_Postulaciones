@@ -626,7 +626,27 @@ async function init() {
         hideLoading();
     }
 
-    // 5. Ejecutar webhook (fuera del try para no romper init)
+    // 5. Inicializar flatpickr para campos con hora
+    if (window.flatpickr) {
+        flatpickr('#fechaEvaluacion', {
+            enableTime: true,
+            time_24hr: false,
+            altInput: true,
+            altFormat: 'Y-m-d h:i K',
+            dateFormat: 'Y-m-d\\TH:i',
+            allowInput: true
+        });
+        flatpickr('#fechaEntrevista', {
+            enableTime: true,
+            time_24hr: false,
+            altInput: true,
+            altFormat: 'Y-m-d h:i K',
+            dateFormat: 'Y-m-d\\TH:i',
+            allowInput: true
+        });
+    }
+
+    // 6. Ejecutar webhook (fuera del try para no romper init)
     try {
         checkAndNotifyWebhook();
     } catch (webhookErr) {
