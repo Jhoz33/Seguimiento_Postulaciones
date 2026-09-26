@@ -85,7 +85,14 @@ function todayStr() {
 
 function dateDiffDays(dateStr) {
     if (!dateStr) return null;
-    const target = new Date(dateStr);
+    const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
+    let target;
+    if (isDateOnly) {
+        const [y,m,d] = dateStr.split('-').map(Number);
+        target = new Date(y, m-1, d);
+    } else {
+        target = new Date(dateStr);
+    }
     const today = new Date(todayStr() + 'T00:00:00');
     if (isNaN(target)) return null;
     return Math.round((target - today) / 86400000);
