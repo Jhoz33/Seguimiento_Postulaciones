@@ -372,12 +372,14 @@ function getFormData() {
         if (!dateStr) return null;
         const timeVal = document.getElementById(timeInputId).value.trim();
         if (!timeVal) {
-            return new Date(dateStr + 'T00:00:00').toISOString();
+            const d = new Date(dateStr + 'T00:00:00');
+            return d.toISOString();
         }
         // Intentar parsear formato h:i AM/PM
         const match = timeVal.match(/(\d{1,2}):(\d{2})\s*([AP]M)/i);
         if (!match) {
-            return new Date(dateStr + 'T00:00:00').toISOString();
+            const d = new Date(dateStr + 'T00:00:00');
+            return d.toISOString();
         }
         let hours = parseInt(match[1],10);
         const minutes = parseInt(match[2],10);
@@ -385,7 +387,7 @@ function getFormData() {
         if (ampm === 'PM' && hours !== 12) hours += 12;
         if (ampm === 'AM' && hours === 12) hours = 0;
         const [y,m,d] = dateStr.split('-').map(Number);
-        const dateObj = new Date(Date.UTC(y, m-1, d, hours, minutes));
+        const dateObj = new Date(y, m-1, d, hours, minutes);
         return dateObj.toISOString();
     };
     
@@ -458,8 +460,8 @@ function handleEdit(id) {
         const d = new Date(app.fechaEvaluacion);
         if (!isNaN(d)) {
             document.getElementById('fechaEvaluacion').value = d.toISOString().split('T')[0];
-            const hours = d.getUTCHours();
-            const minutes = d.getUTCMinutes();
+            const hours = d.getHours();
+            const minutes = d.getMinutes();
             if (hours !== 0 || minutes !== 0) {
                 const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
                 document.getElementById('fechaEvaluacionHora').value = timeStr;
@@ -476,8 +478,8 @@ function handleEdit(id) {
         const d = new Date(app.fechaEntrevista);
         if (!isNaN(d)) {
             document.getElementById('fechaEntrevista').value = d.toISOString().split('T')[0];
-            const hours = d.getUTCHours();
-            const minutes = d.getUTCMinutes();
+            const hours = d.getHours();
+            const minutes = d.getMinutes();
             if (hours !== 0 || minutes !== 0) {
                 const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
                 document.getElementById('fechaEntrevistaHora').value = timeStr;
