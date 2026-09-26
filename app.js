@@ -97,11 +97,16 @@ function formatDate(dateStr) {
         const d = new Date(dateStr);
         if (isNaN(d)) return dateStr;
         const datePart = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-        // Mostrar hora solo si la cadena original trae componente de hora
-        const hasTime = /[T ]\d{2}:\d{2}/.test(dateStr);
+        // Mostrar hora solo si la cadena original trae componente de hora y no es 00:00
+        const hasTime = /[T ](\d{2}):(\d{2})/.test(dateStr);
         if (hasTime) {
-            const timePart = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
-            return `${datePart}, ${timePart}`;
+            const match = dateStr.match(/[T ](\d{2}):(\d{2})/);
+            const hour = match ? parseInt(match[1],10) : null;
+            const minute = match ? parseInt(match[2],10) : null;
+            if (hour !== 0 || minute !== 0) {
+                const timePart = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
+                return `${datePart}, ${timePart}`;
+            }
         }
         return datePart;
     } catch { return dateStr; }
@@ -637,24 +642,28 @@ async function init() {
     // 5. Inicializar flatpickr para campos con hora
     if (window.flatpickr) {
         window.fpEval = flatpickr('#fechaEvaluacion', {
-            enableTime: false,
+            enableTime: true,
+            time_24hr: false,
             altInput: true,
-            altFormat: 'Y-m-d',
-            dateFormat: 'Y-m-d',
+            altFormat: 'Y-m-d h:i K',
+            dateFormat: 'c',
             allowInput: true,
             clearButton: true,
+            minuteIncrement: 15,
             defaultDate: null,
             onReady: function(){ if(!this.input.value){ this.clear(); } },
             onOpen: function(){ if(!this.selectedDates.length){ this.setDate(null, false); } },
             onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
         });
         window.fpEntrevista = flatpickr('#fechaEntrevista', {
-            enableTime: false,
+            enableTime: true,
+            time_24hr: false,
             altInput: true,
-            altFormat: 'Y-m-d',
-            dateFormat: 'Y-m-d',
+            altFormat: 'Y-m-d h:i K',
+            dateFormat: 'c',
             allowInput: true,
             clearButton: true,
+            minuteIncrement: 15,
             defaultDate: null,
             onReady: function(){ if(!this.input.value){ this.clear(); } },
             onOpen: function(){ if(!this.selectedDates.length){ this.setDate(null, false); } },
