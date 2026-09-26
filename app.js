@@ -423,13 +423,19 @@ function handleEdit(id) {
     document.getElementById('fechaPostulacion').value = app.fechaPostulacion || '';
     document.getElementById('fechaResultadoPostulacion').value = app.fechaResultadoPostulacion || '';
     document.getElementById('resultadoEvaluacion').value = app.resultadoEvaluacion;
-    if (window.fpEval) window.fpEval.setDate(app.fechaEvaluacion || null, false);
+    if (window.fpEval) {
+        const dEval = app.fechaEvaluacion ? new Date(app.fechaEvaluacion) : null;
+        window.fpEval.setDate(isNaN(dEval) ? null : dEval, false);
+    }
     document.getElementById('fechaResultadoEvaluacion').value = app.fechaResultadoEvaluacion || '';
     document.getElementById('resultadoCV').value = app.resultadoCV;
     document.getElementById('fechaCV').value = app.fechaCV || '';
     document.getElementById('fechaResultadoCV').value = app.fechaResultadoCV || '';
     document.getElementById('resultadoEntrevista').value = app.resultadoEntrevista;
-    if (window.fpEntrevista) window.fpEntrevista.setDate(app.fechaEntrevista || null, false);
+    if (window.fpEntrevista) {
+        const dEnt = app.fechaEntrevista ? new Date(app.fechaEntrevista) : null;
+        window.fpEntrevista.setDate(isNaN(dEnt) ? null : dEnt, false);
+    }
     document.getElementById('fechaResultadoEntrevista').value = app.fechaResultadoEntrevista || '';
     document.getElementById('resultadoFinal').value = app.resultadoFinal;
     document.getElementById('fechaFinal').value = app.fechaFinal || '';
