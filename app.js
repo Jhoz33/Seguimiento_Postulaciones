@@ -290,7 +290,35 @@ function renderApplications() {
 
     renderAlertPanels();
 
-    const sorted = [...applications].reverse();
+    const getNextDate = (app) => {
+        const dates = [
+            app.fechaPostulacion,
+            app.fechaEvaluacion,
+            app.fechaCV,
+            app.fechaEntrevista,
+            app.fechaFinal
+        ].filter(Boolean);
+        if (dates.length === 0) return null;
+        // Parse dates as local
+        const parsed = dates.map(d => {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+                const [y,m,day] = d.split('-').map(Number);
+                return new Date(y, m-1, day);
+            }
+            return new Date(d);
+        }).filter(d => !isNaN(d));
+        if (parsed.length === 0) return null;
+        return new Date(Math.min(...parsed.map(d => d.getTime())));
+    };
+
+    const sorted = [...applications].sort((a,b) => {
+        const da = getNextDate(a);
+        const db = getNextDate(b);
+        if (!da && !db) return 0;
+        if (!da) return 1;
+        if (!db) return -1;
+        return da - db;
+    });
 
     appsContainer.innerHTML = sorted.map(app => {
         const urlDisplay = app.enlace
