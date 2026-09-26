@@ -289,9 +289,9 @@ function renderApplications() {
                     ${statusBadge(estado)}
                 </div>
                 <div class="flex flex-col gap-0.5 text-[11px]">
-                    <span class="text-gray-400">Evento</span>
+                    <span class="text-gray-400">Fecha</span>
                     ${FechaConIcono(fechaEvento)}
-                    ${fechaResultado ? `<span class="text-gray-400 mt-1">Resultado</span>${FechaConIcono(fechaResultado)}` : ''}
+                    ${fechaResultado ? `<span class="text-gray-400 mt-1">Fecha resultado</span>${FechaConIcono(fechaResultado)}` : ''}
                 </div>
             </div>`;
         }
