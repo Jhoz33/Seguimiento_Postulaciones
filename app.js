@@ -368,17 +368,18 @@ function getFormData() {
     const fechaEvaluacionDate = document.getElementById('fechaEvaluacion').value;
     const fechaEntrevistaDate = document.getElementById('fechaEntrevista').value;
     
-    const combineDateTime = (dateStr, fpTime) => {
+    const combineDateTime = (dateStr, fpTime, timeInputId) => {
         if (!dateStr) return null;
-        if (!fpTime || !fpTime.selectedDates || !fpTime.selectedDates[0]) {
-            // Sin hora -> medianoche
+        const timeVal = document.getElementById(timeInputId).value;
+        if (!timeVal) {
             return new Date(dateStr + 'T00:00:00').toISOString();
         }
-        const timeDate = fpTime.selectedDates[0];
-        // Combinar fecha del input con hora del picker
-        const [y,m,d] = dateStr.split('-').map(Number);
-        const dateObj = new Date(y, m-1, d, timeDate.getHours(), timeDate.getMinutes());
-        return dateObj.toISOString();
+        // Parse time from flatpickr format h:i K
+        const dt = new Date(dateStr + ' ' + timeVal);
+        if (isNaN(dt)) {
+            return new Date(dateStr + 'T00:00:00').toISOString();
+        }
+        return dt.toISOString();
     };
     
     const data = {
@@ -388,13 +389,13 @@ function getFormData() {
         fechaPostulacion: document.getElementById('fechaPostulacion').value,
         fechaResultadoPostulacion: document.getElementById('fechaResultadoPostulacion').value,
         resultadoEvaluacion: document.getElementById('resultadoEvaluacion').value,
-        fechaEvaluacion: combineDateTime(fechaEvaluacionDate, window.fpEvalTime),
+        fechaEvaluacion: combineDateTime(fechaEvaluacionDate, window.fpEvalTime, 'fechaEvaluacionHora'),
         fechaResultadoEvaluacion: document.getElementById('fechaResultadoEvaluacion').value,
         resultadoCV: document.getElementById('resultadoCV').value,
         fechaCV: document.getElementById('fechaCV').value,
         fechaResultadoCV: document.getElementById('fechaResultadoCV').value,
         resultadoEntrevista: document.getElementById('resultadoEntrevista').value,
-        fechaEntrevista: combineDateTime(fechaEntrevistaDate, window.fpEntrevistaTime),
+        fechaEntrevista: combineDateTime(fechaEntrevistaDate, window.fpEntrevistaTime, 'fechaEntrevistaHora'),
         fechaResultadoEntrevista: document.getElementById('fechaResultadoEntrevista').value,
         resultadoFinal: document.getElementById('resultadoFinal').value,
         fechaFinal: document.getElementById('fechaFinal').value
@@ -681,6 +682,7 @@ async function init() {
             minuteIncrement: 15,
             defaultDate: null,
             onReady: function(){ if(!this.input.value){ this.clear(); } },
+            onOpen: function(){ if(!this.selectedDates.length){ this.setDate(null, false); } },
             onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
         });
         window.fpEntrevistaTime = flatpickr('#fechaEntrevistaHora', {
@@ -694,6 +696,7 @@ async function init() {
             minuteIncrement: 15,
             defaultDate: null,
             onReady: function(){ if(!this.input.value){ this.clear(); } },
+            onOpen: function(){ if(!this.selectedDates.length){ this.setDate(null, false); } },
             onChange: function(selectedDates){ if(!selectedDates.length){ this.input.value = ''; } }
         });
     }
