@@ -17,7 +17,7 @@ CREATE TABLE postulaciones (
     
     -- Resultado + Fecha de Evaluación Técnica + Fecha Resultado Evaluación Técnica
     resultado_evaluacion TEXT DEFAULT 'Pendiente',
-    fecha_evaluacion DATE,
+    fecha_evaluacion TIMESTAMPTZ,
     fecha_resultado_evaluacion DATE,
     
     -- Resultado + Fecha de Evaluación Curricular + Fecha Resultado Evaluación Curricular
@@ -27,7 +27,7 @@ CREATE TABLE postulaciones (
     
     -- Resultado + Fecha de Entrevista + Fecha Resultado Entrevista
     resultado_entrevista TEXT DEFAULT 'Pendiente',
-    fecha_entrevista DATE,
+    fecha_entrevista TIMESTAMPTZ,
     fecha_resultado_entrevista DATE,
     
     -- Resultado + Fecha Final

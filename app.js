@@ -85,16 +85,25 @@ function todayStr() {
 
 function dateDiffDays(dateStr) {
     if (!dateStr) return null;
-    const target = new Date(dateStr + 'T00:00:00');
+    const target = new Date(dateStr);
     const today = new Date(todayStr() + 'T00:00:00');
+    if (isNaN(target)) return null;
     return Math.round((target - today) / 86400000);
 }
 
 function formatDate(dateStr) {
     if (!dateStr) return '';
     try {
-        const d = new Date(dateStr + 'T00:00:00');
-        return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+        const d = new Date(dateStr);
+        if (isNaN(d)) return dateStr;
+        const datePart = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+        const hours = d.getHours();
+        const minutes = d.getMinutes();
+        if (hours !== 0 || minutes !== 0) {
+            const timePart = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
+            return `${datePart}, ${timePart}`;
+        }
+        return datePart;
     } catch { return dateStr; }
 }
 
