@@ -123,12 +123,22 @@ const FASES_VIGILADAS = [
 function getAlertLevel(app) {
     let level = 'safe';
     for (const fase of FASES_VIGILADAS) {
-        const fecha = app[fase.fecha];
+        const fechaEvento = app[fase.fecha];
+        const fechaResultadoKey = 'fechaResultado' + fase.fecha.replace('fecha','');
+        // construir clave fechaResultado: fechaPostulacion -> fechaResultadoPostulacion
+        const fechaResultado = app[fechaResultadoKey];
         const estado = app[fase.estado];
-        if (!fecha) continue;
+        if (!fechaEvento && !fechaResultado) continue;
         const isPending = (estado === 'Pendiente' || estado === 'En proceso' || estado === 'Agendada');
         if (!isPending) continue;
-        const diff = dateDiffDays(fecha);
+        // Considerar la fecha mayor entre evento y resultado
+        let fechaParaComparar = fechaEvento;
+        if (fechaResultado && fechaEvento) {
+            fechaParaComparar = new Date(fechaEvento) > new Date(fechaResultado) ? fechaEvento : fechaResultado;
+        } else if (fechaResultado) {
+            fechaParaComparar = fechaResultado;
+        }
+        const diff = dateDiffDays(fechaParaComparar);
         if (diff === null) continue;
         if (diff <= 0) return 'danger';
         if (diff === 1) level = 'warning';
