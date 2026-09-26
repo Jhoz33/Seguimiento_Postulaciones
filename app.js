@@ -94,7 +94,15 @@ function dateDiffDays(dateStr) {
 function formatDate(dateStr) {
     if (!dateStr) return '';
     try {
-        const d = new Date(dateStr);
+        // Detectar si es solo fecha YYYY-MM-DD
+        const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
+        let d;
+        if (isDateOnly) {
+            const [y,m,day] = dateStr.split('-').map(Number);
+            d = new Date(y, m-1, day);
+        } else {
+            d = new Date(dateStr);
+        }
         if (isNaN(d)) return dateStr;
         const datePart = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
         // Solo mostrar hora si la cadena original contiene componente de hora
@@ -468,7 +476,8 @@ function handleEdit(id) {
     if (app.fechaEvaluacion) {
         const d = new Date(app.fechaEvaluacion);
         if (!isNaN(d)) {
-            document.getElementById('fechaEvaluacion').value = d.toISOString().split('T')[0];
+            const localDate = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+            document.getElementById('fechaEvaluacion').value = localDate.toISOString().split('T')[0];
             const hours = d.getHours();
             const minutes = d.getMinutes();
             if (hours !== 0 || minutes !== 0) {
@@ -486,7 +495,8 @@ function handleEdit(id) {
     if (app.fechaEntrevista) {
         const d = new Date(app.fechaEntrevista);
         if (!isNaN(d)) {
-            document.getElementById('fechaEntrevista').value = d.toISOString().split('T')[0];
+            const localDate = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+            document.getElementById('fechaEntrevista').value = localDate.toISOString().split('T')[0];
             const hours = d.getHours();
             const minutes = d.getMinutes();
             if (hours !== 0 || minutes !== 0) {
