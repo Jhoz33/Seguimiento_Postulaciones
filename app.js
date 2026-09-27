@@ -101,7 +101,6 @@ function dateDiffDays(dateStr) {
 function formatDate(dateStr) {
     if (!dateStr) return '';
     try {
-        // Detectar si es solo fecha YYYY-MM-DD
         const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
         let d;
         if (isDateOnly) {
@@ -111,14 +110,21 @@ function formatDate(dateStr) {
             d = new Date(dateStr);
         }
         if (isNaN(d)) return dateStr;
-        const datePart = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-        // Solo mostrar hora si la cadena original contiene componente de hora
+        const months = ['ene','feb','mar','abr','may','jun','jul','ago','set','oct','nov','dic'];
+        const day = String(d.getDate()).padStart(2,'0');
+        const month = months[d.getMonth()];
+        const year = d.getFullYear();
+        const datePart = `${day} ${month} ${year}`;
         const hasTimeComponent = /[T ]\d{2}:\d{2}/.test(dateStr);
         if (hasTimeComponent) {
             const hours = d.getHours();
             const minutes = d.getMinutes();
             if (hours !== 0 || minutes !== 0) {
-                const timePart = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
+                let h = hours % 12;
+                if (h === 0) h = 12;
+                const ampm = hours >= 12 ? 'pm' : 'am';
+                const min = String(minutes).padStart(2,'0');
+                const timePart = `${h}:${min} ${ampm}`;
                 return `${datePart}, ${timePart}`;
             }
         }
