@@ -93,9 +93,11 @@ function dateDiffDays(dateStr) {
     } else {
         target = new Date(dateStr);
     }
-    const today = new Date(todayStr() + 'T00:00:00');
     if (isNaN(target)) return null;
-    return Math.round((target - today) / 86400000);
+    // Normalizar a medianoche local para comparar solo días
+    const targetMidnight = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+    const today = new Date(todayStr() + 'T00:00:00');
+    return Math.round((targetMidnight - today) / 86400000);
 }
 
 function formatDate(dateStr) {
@@ -323,6 +325,8 @@ function renderApplications() {
                 d = new Date(fechaParaUsar);
             }
             if (isNaN(d)) continue;
+            // Normalizar a medianoche local para ordenar por día
+            d = new Date(d.getFullYear(), d.getMonth(), d.getDate());
             if (!earliest || d < earliest) earliest = d;
         }
         return earliest;
